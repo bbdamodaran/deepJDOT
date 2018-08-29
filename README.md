@@ -8,12 +8,14 @@ In order to run, the code requires the following Python modules:
   * Matplotlib
   * [POT](https://github.com/rflamary/POT) (Python Optimal Transport library)
   * keras with tensorflow backend
-Codes are implemented in keras with tensorflow backend.
-DeepJDOT code relies on the optimal transport tool box "POT:Python Optimal Transport library". Please see this [link](https://github.com/rflamary/POT) for the instructions to install POT.
-#
-To run the DeepJDOT on the sample dataset, Please see the below file  or run the below file
+# Modules
+* Deepjdot - module contains the implementation of the DeepJDOT
+* dnn      - import necessary functions from keras
+* deepjdot_demo  - DeepJDOT on the sample dataset
 
-"deepjdot_demo.py"
+To run the DeepJDOT on the sample dataset, Please see or run the "deepjdot_demo.py"
+
+
 
 
 
