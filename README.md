@@ -1,5 +1,5 @@
 # DeepJDOT
-This repository contains the codes of the following paper_
+This repository contains the codes of the following paper
 BB Damodaran, B Kellenberger, R Flamary, D Tuia, N Courty, "[DeepJDOT:Deep Joint Distribution Optimal Transport for Unsupervised Domain Adaptation](https://arxiv.org/abs/1803.10081)", 
 Accepted for publication in ECCV 2018.
 #
