@@ -14,7 +14,7 @@ from keras import backend as K
 from keras.models import Sequential, Model
 from keras.layers import Dense, Activation, normalization
 from keras.layers import Dropout,Flatten, Reshape, concatenate, GlobalAveragePooling2D
-from keras.layers import Convolution2D, MaxPooling2D,UpSampling2D, Merge, merge
+from keras.layers import Convolution2D, MaxPooling2D,UpSampling2D
 from keras.utils import np_utils
 from keras.layers import Input, Lambda
 from keras.optimizers import SGD
