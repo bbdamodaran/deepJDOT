@@ -12,7 +12,7 @@ np.random.seed(seed=42)
 
 from keras import backend as K
 from keras.models import Sequential, Model
-from keras.layers import Dense, Activation, normalization
+from keras.layers import Dense, Activation, normalization, BatchNormalization
 from keras.layers import Dropout,Flatten, Reshape, concatenate, GlobalAveragePooling2D
 from keras.layers import Convolution2D, MaxPooling2D,UpSampling2D
 from keras.utils import np_utils
