@@ -14,6 +14,7 @@ In order to run, the code requires the following Python modules:
 * deepjdot_demo  - DeepJDOT on the sample dataset
 
 To run the DeepJDOT on the sample dataset, Please see or run the "deepjdot_demo.py"
+To run on the real data set: SVHN --> MNIST, please see "deepjdot_svhn_mnist.py"
 
 
 
