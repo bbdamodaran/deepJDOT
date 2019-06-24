@@ -23,7 +23,8 @@ target_traindata, target_trainlabel = make_blobs(1200, centers=[[1, 1], [1, 2]],
 plt.figure()
 plt.scatter(source_traindata[:,0], source_traindata[:,1], c=source_trainlabel, alpha=0.4)
 plt.scatter(target_traindata[:,0], target_traindata[:,1], c=target_trainlabel, marker='x', alpha=0.4)
-plt.legend(['source train', 'target train'])
+plt.legend(['source train data', 'target train data'])
+plt.title("2D blobs (purple=class_0, yellow=class_1)")
 
 # convert to one hot encoded vector
 from keras.utils.np_utils import to_categorical
@@ -147,17 +148,17 @@ def tsne_plot(xs, xt, xs_label, xt_label, subset=True, title=None, pname=None):
     source_only_tsne = tsne.fit_transform(combined_imgs)
     plt.figure(figsize=(10, 10))
     plt.scatter(source_only_tsne[:num_test,0], source_only_tsne[:num_test,1],
-                c=combined_labels[:num_test].argmax(1), s=75, marker='o', alpha=0.5, label='source')
+                c=combined_labels[:num_test].argmax(1), s=75, marker='o', alpha=0.5, label='source train data')
     plt.scatter(source_only_tsne[num_test:,0], source_only_tsne[num_test:,1], 
-                c=combined_labels[num_test:].argmax(1),s=50,marker='d',alpha=0.5,label='target')
+                c=combined_labels[num_test:].argmax(1),s=50,marker='x',alpha=0.5,label='target train data')
     plt.legend(loc='best')
     plt.title(title)
 
 #%% TSNE plots of source model and target model
-title = 'tsne plot of source and target data with source model'
+title = 'tsne plot of source and target data with source model\n(purple=class_0, yellow=class_1)'
 tsne_plot(smodel_source_feat, smodel_target_feat, source_trainlabel_cat, target_trainlabel_cat, title=title)
 
-title = 'tsne plot of source and target data with source+target model'
+title = 'tsne plot of source and target data with source+target model\n(purple=class_0, yellow=class_1)'
 tsne_plot(al_sourcedata, al_targetdata, source_trainlabel_cat, target_trainlabel_cat, title=title)
     
 
