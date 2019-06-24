@@ -18,13 +18,13 @@ from sklearn.datasets import make_moons, make_blobs
 #np.random.seed(seed)
 
 #%%
-source_traindata, source_trainlabel = make_blobs(1200, centers=[[0, 0], [0, 1]], cluster_std=0.2)
-target_traindata, target_trainlabel = make_blobs(1200, centers=[[1, 1], [1, 2]], cluster_std=0.2)
+source_traindata, source_trainlabel = make_blobs(1200, centers=[[0, -1], [0, 0], [0, 1]], cluster_std=0.2)
+target_traindata, target_trainlabel = make_blobs(1200, centers=[[1, 0], [1, 1], [1, 2]], cluster_std=0.2)
 plt.figure()
 plt.scatter(source_traindata[:,0], source_traindata[:,1], c=source_trainlabel, alpha=0.4)
 plt.scatter(target_traindata[:,0], target_traindata[:,1], c=target_trainlabel, marker='x', alpha=0.4)
 plt.legend(['source train data', 'target train data'])
-plt.title("2D blobs (purple=class_0, yellow=class_1)")
+plt.title("2D blobs visualization (shape=domain, color=class)")
 
 # convert to one hot encoded vector
 from keras.utils.np_utils import to_categorical
@@ -64,7 +64,7 @@ fes = feat_ext(ms)
 nets = classifier(fes,n_class)
 source_model = dnn.Model(ms, nets)
 source_model.compile(optimizer=optim, loss='categorical_crossentropy', metrics=['accuracy'])
-source_model.fit(source_traindata, source_trainlabel_cat, batch_size=128, epochs=75, validation_data=(target_traindata, target_trainlabel_cat))
+source_model.fit(source_traindata, source_trainlabel_cat, batch_size=128, epochs=100, validation_data=(target_traindata, target_trainlabel_cat))
 source_acc = source_model.evaluate(source_traindata, source_trainlabel_cat)
 target_acc = source_model.evaluate(target_traindata, target_trainlabel_cat)
 print("source acc using source model", source_acc)
@@ -124,13 +124,13 @@ def feature_extraction(model, data, out_layer_num=-2, out_layer_name=None):
     
     return intermediate_output
 #%%  source model intermediate layer values  
-smodel_source_feat = feature_extraction(source_model, source_traindata[:100,],
+subset = 200
+smodel_source_feat = feature_extraction(source_model, source_traindata[:subset,],
                                         out_layer_name='feat_ext')
-smodel_target_feat  = feature_extraction(source_model, target_traindata[:100,],
+smodel_target_feat  = feature_extraction(source_model, target_traindata[:subset,],
                                         out_layer_name='feat_ext')
 
 #%% intermediate layers of source and target domain for TSNE plot of target (DeepJDOT) model
-subset = 100
 al_sourcedata = model.predict(source_traindata[:subset,])[1]
 al_targetdata = model.predict(target_traindata[:subset,])[1]
 
@@ -155,10 +155,10 @@ def tsne_plot(xs, xt, xs_label, xt_label, subset=True, title=None, pname=None):
     plt.title(title)
 
 #%% TSNE plots of source model and target model
-title = 'tsne plot of source and target data with source model\n(purple=class_0, yellow=class_1)'
+title = 'tsne plot of source and target data with source model\n2D blobs visualization (shape=domain, color=class)'
 tsne_plot(smodel_source_feat, smodel_target_feat, source_trainlabel_cat, target_trainlabel_cat, title=title)
 
-title = 'tsne plot of source and target data with source+target model\n(purple=class_0, yellow=class_1)'
+title = 'tsne plot of source and target data with source+target model\n2D blobs visualization (shape=domain, color=class)'
 tsne_plot(al_sourcedata, al_targetdata, source_trainlabel_cat, target_trainlabel_cat, title=title)
     
 
