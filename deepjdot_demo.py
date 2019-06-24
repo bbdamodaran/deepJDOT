@@ -7,7 +7,7 @@ DeepJDOT: with emd for the sample data
 """
 
 import numpy as np
-import pylab as pl 
+import pylab as pl
 import matplotlib.pyplot as plt
 import dnn
 from scipy.spatial.distance import cdist 
@@ -18,11 +18,13 @@ from sklearn.datasets import make_moons, make_blobs
 #np.random.seed(seed)
 
 #%%
-source_traindata, source_trainlabel = make_blobs(1200, centers=[[0, 0], [0, 1]], cluster_std=0.2)
-target_traindata, target_trainlabel = make_blobs(1200, centers=[[1, -1], [1, 0]], cluster_std=0.2)
+source_traindata, source_trainlabel = make_blobs(1200, centers=[[0, -1], [0, 0], [0, 1]], cluster_std=0.2)
+target_traindata, target_trainlabel = make_blobs(1200, centers=[[1, 0], [1, 1], [1, 2]], cluster_std=0.2)
 plt.figure()
-plt.scatter(source_traindata[:,0], source_traindata[:,1], c=source_trainlabel, alpha=0.4)
-plt.scatter(target_traindata[:,0], target_traindata[:,1], c=target_trainlabel, cmap='cool', alpha=0.4)
+plt.scatter(source_traindata[:,0], source_traindata[:,1], c=source_trainlabel, marker='o', alpha=0.4)
+plt.scatter(target_traindata[:,0], target_traindata[:,1], c=target_trainlabel, marker='x', alpha=0.4)
+plt.legend(['source train data', 'target train data'])
+plt.title("2D blobs visualization (shape=domain, color=class)")
 
 # convert to one hot encoded vector
 from keras.utils.np_utils import to_categorical
@@ -62,11 +64,11 @@ fes = feat_ext(ms)
 nets = classifier(fes,n_class)
 source_model = dnn.Model(ms, nets)
 source_model.compile(optimizer=optim, loss='categorical_crossentropy', metrics=['accuracy'])
-source_model.fit(source_traindata, source_trainlabel_cat, batch_size=128, epochs=50)
+source_model.fit(source_traindata, source_trainlabel_cat, batch_size=128, epochs=100, validation_data=(target_traindata, target_trainlabel_cat))
 source_acc = source_model.evaluate(source_traindata, source_trainlabel_cat)
 target_acc = source_model.evaluate(target_traindata, target_trainlabel_cat)
-print("source acc", source_acc)
-print("target acc", target_acc)
+print("source loss & acc using source model", source_acc)
+print("target loss & acc using source model", target_acc)
 
 #%% Target model
 main_input = dnn.Input(shape=(n_dim[1],))
@@ -94,10 +96,10 @@ h,t_loss,tacc = al_model.fit(source_traindata, source_trainlabel_cat, target_tra
 
 
 #%% accuracy assesment
-acc = al_model.evaluate(target_traindata, target_trainlabel_cat)
 tarmodel_sacc = al_model.evaluate(source_traindata, source_trainlabel_cat)    
-print("target domain acc", acc)
-print("trained on target, source acc", tarmodel_sacc)
+acc = al_model.evaluate(target_traindata, target_trainlabel_cat)
+print("source loss & acc using source+target model", tarmodel_sacc)
+print("target loss & acc using source+target model", acc)
 #%% Intermediate layers features extraction from the pre-trained model
 def feature_extraction(model, data, out_layer_num=-2, out_layer_name=None):
     '''
@@ -122,13 +124,13 @@ def feature_extraction(model, data, out_layer_num=-2, out_layer_name=None):
     
     return intermediate_output
 #%%  source model intermediate layer values  
-smodel_source_feat = feature_extraction(source_model, source_traindata[:100,],
+subset = 200
+smodel_source_feat = feature_extraction(source_model, source_traindata[:subset,],
                                         out_layer_name='feat_ext')
-smodel_target_feat  = feature_extraction(source_model, target_traindata[:100,],
+smodel_target_feat  = feature_extraction(source_model, target_traindata[:subset,],
                                         out_layer_name='feat_ext')
 
 #%% intermediate layers of source and target domain for TSNE plot of target (DeepJDOT) model
-subset = 100
 al_sourcedata = model.predict(source_traindata[:subset,])[1]
 al_targetdata = model.predict(target_traindata[:subset,])[1]
 
@@ -144,19 +146,19 @@ def tsne_plot(xs, xt, xs_label, xt_label, subset=True, title=None, pname=None):
     from sklearn.manifold import TSNE
     tsne = TSNE(perplexity=30, n_components=2, init='pca', n_iter=3000)
     source_only_tsne = tsne.fit_transform(combined_imgs)
-    plt.figure(figsize=(15, 15))
+    plt.figure(figsize=(10, 10))
     plt.scatter(source_only_tsne[:num_test,0], source_only_tsne[:num_test,1],
-                c=combined_labels[:num_test].argmax(1), s=75, marker='o', alpha=0.5, label='source')
+                c=combined_labels[:num_test].argmax(1), s=75, marker='o', alpha=0.5, label='source train data')
     plt.scatter(source_only_tsne[num_test:,0], source_only_tsne[num_test:,1], 
-                c=combined_labels[num_test:].argmax(1),s=50,marker='d',alpha=0.5,label='target')
+                c=combined_labels[num_test:].argmax(1),s=50,marker='x',alpha=0.5,label='target train data')
     plt.legend(loc='best')
     plt.title(title)
 
 #%% TSNE plots of source model and target model
-title = 'tsne plot of source and target data with source model'
+title = 'tsne plot of source and target data with source model\n2D blobs visualization (shape=domain, color=class)'
 tsne_plot(smodel_source_feat, smodel_target_feat, source_trainlabel_cat, target_trainlabel_cat, title=title)
 
-title = 'tsne plot of source and target data with target model'
+title = 'tsne plot of source and target data with source+target model\n2D blobs visualization (shape=domain, color=class)'
 tsne_plot(al_sourcedata, al_targetdata, source_trainlabel_cat, target_trainlabel_cat, title=title)
     
 
