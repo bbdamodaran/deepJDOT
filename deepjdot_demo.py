@@ -67,8 +67,8 @@ source_model.compile(optimizer=optim, loss='categorical_crossentropy', metrics=[
 source_model.fit(source_traindata, source_trainlabel_cat, batch_size=128, epochs=100, validation_data=(target_traindata, target_trainlabel_cat))
 source_acc = source_model.evaluate(source_traindata, source_trainlabel_cat)
 target_acc = source_model.evaluate(target_traindata, target_trainlabel_cat)
-print("source acc using source model", source_acc)
-print("target acc using source model", target_acc)
+print("source loss & acc using source model", source_acc)
+print("target loss & acc using source model", target_acc)
 
 #%% Target model
 main_input = dnn.Input(shape=(n_dim[1],))
@@ -98,8 +98,8 @@ h,t_loss,tacc = al_model.fit(source_traindata, source_trainlabel_cat, target_tra
 #%% accuracy assesment
 tarmodel_sacc = al_model.evaluate(source_traindata, source_trainlabel_cat)    
 acc = al_model.evaluate(target_traindata, target_trainlabel_cat)
-print("source acc using source+target model", tarmodel_sacc)
-print("target acc using source+target model", acc)
+print("source loss & acc using source+target model", tarmodel_sacc)
+print("target loss & acc using source+target model", acc)
 #%% Intermediate layers features extraction from the pre-trained model
 def feature_extraction(model, data, out_layer_num=-2, out_layer_name=None):
     '''
