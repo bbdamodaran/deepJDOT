@@ -21,7 +21,7 @@ from sklearn.datasets import make_moons, make_blobs
 source_traindata, source_trainlabel = make_blobs(1200, centers=[[0, -1], [0, 0], [0, 1]], cluster_std=0.2)
 target_traindata, target_trainlabel = make_blobs(1200, centers=[[1, 0], [1, 1], [1, 2]], cluster_std=0.2)
 plt.figure()
-plt.scatter(source_traindata[:,0], source_traindata[:,1], c=source_trainlabel, alpha=0.4)
+plt.scatter(source_traindata[:,0], source_traindata[:,1], c=source_trainlabel, marker='o', alpha=0.4)
 plt.scatter(target_traindata[:,0], target_traindata[:,1], c=target_trainlabel, marker='x', alpha=0.4)
 plt.legend(['source train data', 'target train data'])
 plt.title("2D blobs visualization (shape=domain, color=class)")
