@@ -232,7 +232,7 @@ def SVHN_dataload():
     import numpy as np
     import scipy.io as sio
     import os
-    pathname ='/home/damodara/OT/DA/datasets/SVHN'
+    pathname = 'data/SVHN'
     fn = 'train_32x32.mat'
     loaddata = sio.loadmat(os.path.join(pathname, fn))
     Traindata = loaddata['X']

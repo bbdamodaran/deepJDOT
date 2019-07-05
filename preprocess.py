@@ -98,11 +98,12 @@ def resize_data(data, resize_size):
 #        for i in range(size[0]):
 #            data[i,:,:]= data[i,:,:]-np.mean(data[i,:,:])
 #   
-def min_max_scaling(data, s=-1, t=1):
+def min_max_scaling(data, lowerbound_zero=False):
     from sklearn.preprocessing import minmax_scale
     size = data.shape
     data = data/255.0
-    data = (data *2.0)-1.0
+    if not lowerbound_zero:
+        data = (data *2.0)-1.0
     data[np.isnan(data)] = 0
     # if (len(size)==4):
     #     for i in range(size[3]):

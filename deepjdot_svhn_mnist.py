@@ -43,8 +43,8 @@ n_class = len(np.unique(source_trainlabel))
 n_dim = np.shape(source_traindata)
 
 #%%
-pathname ='results/Stoch_JDOT/MNIST_MNSITM_N'
-filesave = False
+pathname ='results/'
+filesave = True
  #%%
 def make_trainable(net, val):
     net.trainable = val
@@ -124,8 +124,10 @@ smodel_train_acc = source_model.evaluate(source_traindata, source_trainlabel_cat
 smodel_test_acc = source_model.evaluate(source_testdata, source_testlabel_cat)[1]
 smodel_target_trainacc = source_model.evaluate(target_traindata, target_trainlabel_cat)[1]
 smodel_target_testacc = source_model.evaluate(target_testdata, target_testlabel_cat)[1]
-print("source acc", smodel_test_acc)
-print("target acc", smodel_target_testacc)
+print("source train acc using source model", smodel_train_acc)
+print("target train acc using source model", smodel_target_trainacc)
+print("source test acc using source model", smodel_test_acc)
+print("target test acc using source model", smodel_target_testacc)
 
 
 #%%
@@ -156,9 +158,8 @@ ffe=fe_model(main_input)
 net = cl_model(ffe)
 #con_cat = dnn.concatenate([net, ffe ], axis=1)
 model = dnn.Model(inputs=main_input, outputs=[net, ffe])
-# model.set_weights(source_model.get_weights())
+#model.set_weights(source_model.get_weights())
 
-#%%
 #%% Target model loss and fit function
 optim = dnn.keras.optimizers.Adam(lr=0.0001)#,beta_1=0.999, beta_2=0.999)
 sample_size=50
@@ -381,13 +382,18 @@ al_model = jdot_align(model, batch_size, n_class, optim,allign_loss=1.0,
 h,t_loss,tacc = al_model.fit(source_traindata, source_trainlabel_cat, target_traindata,
                             n_iter=15000,cal_bal=True)
 #%%
-tmodel_tar_test_acc = al_model.evaluate(target_testdata, target_testlabel_cat)
-tmodel_tar_train_acc = al_model.evaluate(target_traindata, target_trainlabel_cat)
-tmodel_source_test_acc = al_model.evaluate(source_testdata, source_testlabel_cat)
 tmodel_source_train_acc = al_model.evaluate(source_traindata, source_trainlabel_cat)
-print("target domain acc", tmodel_tar_test_acc)
-print("trained on target, source acc", tmodel_source_test_acc)
-print("maximum target domain acc", np.max(tacc))
+print("source train acc using source+target model", tmodel_source_train_acc)
+tmodel_tar_train_acc = al_model.evaluate(target_traindata, target_trainlabel_cat)
+print("target train acc using source+target model", tmodel_tar_train_acc)
+tmodel_source_test_acc = al_model.evaluate(source_testdata, source_testlabel_cat)
+print("source test acc using source+target model", tmodel_source_test_acc)
+tmodel_tar_test_acc = al_model.evaluate(target_testdata, target_testlabel_cat)
+print("target test acc using source+target model", tmodel_tar_test_acc)
+
+#print("target domain acc", tmodel_tar_test_acc)
+#print("trained on target, source acc", tmodel_source_test_acc)
+#print("maximum target domain acc", np.max(tacc))
 
 allweights = model.get_weights()
 #%% deepjdot model save
@@ -417,7 +423,7 @@ if filesave:
     # fb.write("Target domain DeepJDOT model, target data max acc = %f\n" %(np.max(tacc)))
     fb.close()
 
-    np.savez(os.path.join(pathname, data_name+'deepjdot_objvalues.npz'), hist_loss = h, total_loss=t_loss, target_acc=tacc)
+#    np.savez(os.path.join(pathname, data_name+'deepjdot_objvalues.npz'), hist_loss = h, total_loss=t_loss, target_acc=tacc)
 #%%
 al_sourcedata = model.predict(source_traindata[:2000,:])[1]
 al_targetdata = model.predict(target_traindata[:2000,:])[1]

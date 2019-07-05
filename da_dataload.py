@@ -185,7 +185,7 @@ def mnistm_to_mnist():
 
 
 #%% SVHNN MNIST
-def svhnn_to_mnist(method = 'zero_mean_unitvarince'):
+def svhnn_to_mnist(method = 'zero_mean_unitvarince', **params):
     from skimage.color import rgb2gray
     from scipy.misc import imresize
     from DatasetLoad import SVHN_dataload
@@ -197,8 +197,8 @@ def svhnn_to_mnist(method = 'zero_mean_unitvarince'):
         source_traindata = instance_zero_mean_unitvar(source_traindata, scaling=True)
         source_testdata = instance_zero_mean_unitvar(source_testdata, scaling=True)
     elif method =='min_max':
-        source_traindata = min_max_scaling(source_traindata)
-        source_testdata = min_max_scaling(source_testdata)
+        source_traindata = min_max_scaling(source_traindata, **params)
+        source_testdata = min_max_scaling(source_testdata, **params)
     else:
         source_traindata = zero_mean_unitvarince(source_traindata, scaling=True)
         source_testdata = zero_mean_unitvarince(source_testdata, scaling=True)
@@ -224,8 +224,8 @@ def svhnn_to_mnist(method = 'zero_mean_unitvarince'):
         target_traindata = instance_zero_mean_unitvar(target_traindata, scaling=True)
         target_testdata = instance_zero_mean_unitvar(target_testdata, scaling=True)
     elif method =='min_max':
-        target_traindata = min_max_scaling(target_traindata)
-        target_testdata = min_max_scaling(target_testdata)
+        target_traindata = min_max_scaling(target_traindata, **params)
+        target_testdata = min_max_scaling(target_testdata, **params)
     else:
         target_traindata = zero_mean_unitvarince(target_traindata,scaling=True)
         target_testdata = zero_mean_unitvarince(target_testdata,scaling=True)
