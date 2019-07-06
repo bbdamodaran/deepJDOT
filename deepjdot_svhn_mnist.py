@@ -24,20 +24,45 @@ import matplotlib as mpl
 from matplotlib.colors import ListedColormap
 
 #%% SVHN - MNIST
-from da_dataload import svhnn_to_mnist
+from da_dataload import svhnn_to_mnist, generate_rotated_image, generate_rotated_images
 (source_traindata, source_trainlabel, source_testdata, source_testlabel),\
 (target_traindata, target_trainlabel,target_testdata, target_testlabel)=svhnn_to_mnist('min_max', lowerbound_zero=True)
 data_name = 'svhnn_mnist'
-
+#%%
+#if do_reg and rotate_image:
+#    img, angle_per = generate_rotated_image(source_traindata[0])
+#    plt.imshow(img)
+#    print("Angle percentage:", angle_per)
+#    plt.show()
 #%%
 do_reg = True
-
 if do_reg:
-    source_trainlabel_cat = source_trainlabel / 10
-    source_testlabel_cat = source_testlabel / 10
-    target_trainlabel_cat = (target_trainlabel / 10)[..., None]
-    target_testlabel_cat = (target_testlabel / 10)[..., None]
+    print("Do regression")
+    rotate_image = False
+    if rotate_image:
+        swap_dataset = False
+        if swap_dataset:
+            print("Swap dataset")
+            source_traindata, target_traindata = target_traindata, source_traindata
+            source_testdata, target_testdata = target_testdata, source_testdata
+        # do rotation angle regression
+        print("[Rotating Images]")
+        print("Generating source_traindata...")
+        source_traindata, source_trainlabel_cat = generate_rotated_images(source_traindata)
+        print("Generating source_testdata...")
+        source_testdata, source_testlabel_cat = generate_rotated_images(source_testdata)
+        print("Generating target_traindata...")
+        target_traindata, target_trainlabel_cat = generate_rotated_images(target_traindata)
+        print("Generating target_testdata...")
+        target_testdata, target_testlabel_cat = generate_rotated_images(target_testdata)
+    else:
+        # do digit regression
+        source_trainlabel_cat = source_trainlabel / 10
+        source_testlabel_cat = source_testlabel / 10
+        target_trainlabel_cat = (target_trainlabel / 10)[..., None]
+        target_testlabel_cat = (target_testlabel / 10)[..., None]
 else:
+    print("Do classification")
     from keras.utils.np_utils import to_categorical
     source_trainlabel_cat = to_categorical(source_trainlabel)
     source_testlabel_cat = to_categorical(source_testlabel)
@@ -109,8 +134,9 @@ def tsne_plot(xs, xt, xs_label, xt_label, subset=True, title=None, pname=None):
 
 #%% source model
 from architectures import assda_feat_ext, classifier, regressor, res_net50_fe 
+small_model = True
 ms = dnn.Input(shape=(n_dim[1],n_dim[2],n_dim[3]))
-fes = assda_feat_ext(ms, small_model=True)
+fes = assda_feat_ext(ms, small_model=small_model)
 output_layer = regressor if do_reg else classifier
 nets = output_layer(fes, n_class)
 source_model = dnn.Model(ms, nets)
@@ -161,7 +187,7 @@ if not do_reg:
 #%% Creating components of target model
 
 main_input = dnn.Input(shape=(n_dim[1],n_dim[2],n_dim[3]))
-fe = assda_feat_ext(main_input, small_model=True)
+fe = assda_feat_ext(main_input, small_model=small_model)
 fe_size=fe.get_shape().as_list()[1]
 fe_model = dnn.Model(main_input, fe, name= 'fe_model')
 #
