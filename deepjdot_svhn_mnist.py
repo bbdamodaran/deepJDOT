@@ -17,8 +17,8 @@ import h5py
 import importlib
 from scipy.spatial.distance import cdist 
 import matplotlib as mpl
-mpl.use('Agg')
-plt.switch_backend('agg')
+#mpl.use('Agg')
+#plt.switch_backend('agg')
 #from sklearn import datasets
 
 from matplotlib.colors import ListedColormap
@@ -26,7 +26,7 @@ from matplotlib.colors import ListedColormap
 #%% SVHN - MNIST
 from da_dataload import svhnn_to_mnist
 (source_traindata, source_trainlabel, source_testdata, source_testlabel),\
-(target_traindata, target_trainlabel,target_testdata, target_testlabel)=svhnn_to_mnist()
+(target_traindata, target_trainlabel,target_testdata, target_testlabel)=svhnn_to_mnist('min_max', lowerbound_zero=True)
 data_name = 'svhnn_mnist'
 
 #%%
@@ -100,14 +100,14 @@ def tsne_plot(xs, xt, xs_label, xt_label, subset=True, title=None, pname=None):
 
 
 #%% source model
-from architectures import assda_feat_ext, classifier, res_net50_fe 
+from architectures import assda_feat_ext, classifier, regressor, res_net50_fe 
 ms = dnn.Input(shape=(n_dim[1],n_dim[2],n_dim[3]))
-fes = assda_feat_ext(ms)
+fes = assda_feat_ext(ms, small_model=True)
 nets = classifier(fes, n_class)
 source_model = dnn.Model(ms, nets)
 #%%
 optim = dnn.keras.optimizers.Adam(lr=0.0002)#,beta_1=0.999, beta_2=0.999)
-source_model.compile(optimizer=optim, loss='categorical_crossentropy', metrics=['accuracy'])
+source_model.compile(optimizer=optim, loss='categorical_crossentropy', metrics=['accuracy', 'mae'])
 checkpoint = dnn.keras.callbacks.ModelCheckpoint('bst.hdf5', monitor = 'val_loss', verbose = 0, save_best_only = True, mode = 'auto')
 early_stop = dnn.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=1e-5, 
                                                        patience=5, verbose=0, mode='auto')
@@ -120,10 +120,10 @@ source_model.fit(source_traindata, source_trainlabel_cat, batch_size=128, epochs
 # source_model = dnn.keras.models.load_model(os.path.join(pp, 'mnist_usps_sourcemodel.h5'))
 
 # source_model.load_weights('bst.hdf5')
-smodel_train_acc = source_model.evaluate(source_traindata, source_trainlabel_cat)[1]
-smodel_test_acc = source_model.evaluate(source_testdata, source_testlabel_cat)[1]
-smodel_target_trainacc = source_model.evaluate(target_traindata, target_trainlabel_cat)[1]
-smodel_target_testacc = source_model.evaluate(target_testdata, target_testlabel_cat)[1]
+smodel_train_acc = source_model.evaluate(source_traindata, source_trainlabel_cat)
+smodel_test_acc = source_model.evaluate(source_testdata, source_testlabel_cat)
+smodel_target_trainacc = source_model.evaluate(target_traindata, target_trainlabel_cat)
+smodel_target_testacc = source_model.evaluate(target_testdata, target_testlabel_cat)
 print("source train acc using source model", smodel_train_acc)
 print("target train acc using source model", smodel_target_trainacc)
 print("source test acc using source model", smodel_test_acc)
@@ -144,7 +144,7 @@ tsne_plot(sd, td, source_testlabel_cat, target_testlabel_cat, title=title, pname
 #%% 
 
 main_input = dnn.Input(shape=(n_dim[1],n_dim[2],n_dim[3]))
-fe = assda_feat_ext(main_input, l2_weight=0.0)
+fe = assda_feat_ext(main_input, small_model=True)
 fe_size=fe.get_shape().as_list()[1]
 fe_model = dnn.Model(main_input, fe, name= 'fe_model')
 #
@@ -162,7 +162,8 @@ model = dnn.Model(inputs=main_input, outputs=[net, ffe])
 
 #%% Target model loss and fit function
 optim = dnn.keras.optimizers.Adam(lr=0.0001)#,beta_1=0.999, beta_2=0.999)
-sample_size=50
+#sample_size=50
+from sklearn.metrics import accuracy_score, mean_absolute_error
 
 class jdot_align(object):
     def __init__(self, model, batch_size, n_class, optim, allign_loss=1.0, tar_cl_loss=1.0, 
@@ -208,19 +209,19 @@ class jdot_align(object):
 
         self.classifier_cat_loss = classifier_cat_loss
         
-        def source_classifier_cat_loss(y_true, y_pred):
-            '''
-            classifier loss based on categorical cross entropy in the source domain
-            1:batch_size - is source samples
-            batch_size:end - is target samples
-            '''
-            # source true labels
-            ys = y_true[:self.batch_size,:]
-            source_ypred = y_pred[:self.batch_size,:]
-            source_loss = dnn.K.mean(dnn.K.categorical_crossentropy(ys, source_ypred))
-             
-            return self.sloss*source_loss
-        self.source_classifier_cat_loss = source_classifier_cat_loss
+#        def source_classifier_cat_loss(y_true, y_pred):
+#            '''
+#            classifier loss based on categorical cross entropy in the source domain
+#            1:batch_size - is source samples
+#            batch_size:end - is target samples
+#            '''
+#            # source true labels
+#            ys = y_true[:self.batch_size,:]
+#            source_ypred = y_pred[:self.batch_size,:]
+#            source_loss = dnn.K.mean(dnn.K.categorical_crossentropy(ys, source_ypred))
+#             
+#            return self.sloss*source_loss
+#        self.source_classifier_cat_loss = source_classifier_cat_loss
         
         def L2_dist(x,y):
             '''
@@ -351,12 +352,15 @@ class jdot_align(object):
             hist = self.model.train_on_batch([data], [np.vstack((ys, l_dummy)), g_dummy])
             t_loss.append(hist[0])
             if self.verbose:
-                if i%100==0:
-                   print ('iter ={:},tl_loss ={:f}, fe_loss ={:f},  tot_loss={:f}'.format(i, hist[1],
-                          hist[2], hist[0]))
-                   tpred = self.model.predict(target_testdata)[0]
-                   t_acc.append(np.mean(np.argmax(target_testlabel_cat,1)==np.argmax(tpred,1)))
-                   print('Target acc\n', t_acc[-1])
+                if i%50==0:
+                   print ('iter = {:}')
+                   print(list(zip(self.model.metrics_names, hist)))
+                   acc, mae = self.evaluate(target_testdata, target_testlabel_cat)
+#                   tpred = self.model.predict(target_testdata)[0]
+                   t_acc.append(acc)
+                   print('Target acc:', t_acc[-1])
+                   print('Target mae:', mae)
+#                   print('Target mae:', mae)
         return hist, t_loss, t_acc
             
         
@@ -366,9 +370,10 @@ class jdot_align(object):
         return ypred
 
     def evaluate(self, data, label):
-        ypred = self.model.predict(data)
-        score = np.mean(np.argmax(label,1)==np.argmax(ypred[0],1))
-        return score
+        ypred = self.model.predict(data)[0]
+        acc = accuracy_score(label.argmax(1), ypred.argmax(1))
+        mae = mean_absolute_error(label, ypred)
+        return acc, mae
     
     
 #%%
@@ -380,7 +385,7 @@ sloss = 1.0; tloss=0.0001; int_lr=0.001; jdot_alpha=0.001
 al_model = jdot_align(model, batch_size, n_class, optim,allign_loss=1.0,
                       sloss=sloss,tloss=tloss,int_lr=int_lr,jdot_alpha=jdot_alpha,lr_decay=True)
 h,t_loss,tacc = al_model.fit(source_traindata, source_trainlabel_cat, target_traindata,
-                            n_iter=15000,cal_bal=True)
+                            n_iter=1000,cal_bal=False)
 #%%
 tmodel_source_train_acc = al_model.evaluate(source_traindata, source_trainlabel_cat)
 print("source train acc using source+target model", tmodel_source_train_acc)
