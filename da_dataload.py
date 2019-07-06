@@ -6,6 +6,7 @@ Created on Mon Sep 25 17:30:35 2017
 """
 import DatasetLoad
 import numpy as np
+import imutils
 
 def mnist_to_usps():
     from keras.datasets import mnist
@@ -376,7 +377,27 @@ def cifar_to_stl(resize_mode='i',normalize=True):
 
 
 
+def generate_rotated_image(image, lower_angle=-90, upper_angle=90):
+    """Generate a rotated image with a random rotation angle"""
+    percent = np.random.random()
+    percent_to_angle = lambda x: x * (upper_angle-lower_angle) + lower_angle
+    #percent_to_scale = lambda x: x * 0.5 + 0.5
+    angle = percent_to_angle(percent)
+    rotated = imutils.rotate(image, angle, scale=1)
+    return rotated, percent
 
+
+def generate_rotated_images(images):
+    """Generate rotated images from 4D array, returning rotated images and 2D angle labels"""
+    new_images = np.empty_like(images)
+    labels = np.empty(images.shape[0])
+    for i in range(images.shape[0]):
+#        if i % 2500 == 0:
+#            print("Generating image", i)
+        img, angle = generate_rotated_image(images[i])
+        new_images[i] = img
+        labels[i] = angle
+    return new_images, labels[..., np.newaxis]
 
 
     
