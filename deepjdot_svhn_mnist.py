@@ -16,6 +16,7 @@ import copy
 import h5py
 import importlib
 from scipy.spatial.distance import cdist 
+from sklearn.metrics import accuracy_score, mean_absolute_error
 import matplotlib as mpl
 #mpl.use('Agg')
 #plt.switch_backend('agg')
@@ -38,29 +39,35 @@ data_name = 'svhnn_mnist'
 do_reg = True
 if do_reg:
     print("Do regression")
-    rotate_image = False
+    rotate_image = True
     if rotate_image:
-        swap_dataset = False
+        swap_dataset = True
         if swap_dataset:
             print("Swap dataset")
             source_traindata, target_traindata = target_traindata, source_traindata
             source_testdata, target_testdata = target_testdata, source_testdata
         # do rotation angle regression
         print("[Rotating Images]")
+        angle_bounds = [-45, 45]
         print("Generating source_traindata...")
-        source_traindata, source_trainlabel_cat = generate_rotated_images(source_traindata)
+        source_traindata, source_trainlabel_cat = generate_rotated_images(source_traindata, *angle_bounds)
         print("Generating source_testdata...")
-        source_testdata, source_testlabel_cat = generate_rotated_images(source_testdata)
+        source_testdata, source_testlabel_cat = generate_rotated_images(source_testdata, *angle_bounds)
         print("Generating target_traindata...")
-        target_traindata, target_trainlabel_cat = generate_rotated_images(target_traindata)
+        target_traindata, target_trainlabel_cat = generate_rotated_images(target_traindata, *angle_bounds)
         print("Generating target_testdata...")
-        target_testdata, target_testlabel_cat = generate_rotated_images(target_testdata)
+        target_testdata, target_testlabel_cat = generate_rotated_images(target_testdata, *angle_bounds)
     else:
-        # do digit regression
+#         do digit regression
         source_trainlabel_cat = source_trainlabel / 10
         source_testlabel_cat = source_testlabel / 10
         target_trainlabel_cat = (target_trainlabel / 10)[..., None]
         target_testlabel_cat = (target_testlabel / 10)[..., None]
+#        from keras.utils.np_utils import to_categorical
+#        source_trainlabel_cat = to_categorical(source_trainlabel)
+#        source_testlabel_cat = to_categorical(source_testlabel)
+#        target_trainlabel_cat = to_categorical(target_trainlabel)
+#        target_testlabel_cat = to_categorical(target_testlabel)
 else:
     print("Do classification")
     from keras.utils.np_utils import to_categorical
@@ -141,7 +148,7 @@ output_layer = regressor if do_reg else classifier
 nets = output_layer(fes, n_class)
 source_model = dnn.Model(ms, nets)
 #%%
-optim = dnn.keras.optimizers.Adam(lr=0.0002)#,beta_1=0.999, beta_2=0.999)
+optim = dnn.keras.optimizers.Adam(lr=0.001)#,beta_1=0.999, beta_2=0.999)
 if do_reg:
     metrics = ['mae']
     loss = 'binary_crossentropy'
@@ -154,7 +161,7 @@ early_stop = dnn.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=1e-
                                                        patience=5, verbose=0, mode='auto')
 callbacks_list = [early_stop, checkpoint]
 #%%
-source_model.fit(source_traindata, source_trainlabel_cat, batch_size=128, epochs=10,
+source_model.fit(source_traindata, source_trainlabel_cat, batch_size=128, epochs=100,
                   validation_split=0.16, callbacks=callbacks_list)
 
 # pp='/home/damodara/OT/DA/ALJDOT/codes/results/adaa_source/mnist_usps'
@@ -206,7 +213,6 @@ model = dnn.Model(inputs=main_input, outputs=[net, ffe])
 #%% Target model loss and fit function
 optim = dnn.keras.optimizers.Adam(lr=0.0001)#,beta_1=0.999, beta_2=0.999)
 #sample_size=50
-from sklearn.metrics import accuracy_score, mean_absolute_error
 
 class jdot_align(object):
     def __init__(self, model, batch_size, n_class, optim, allign_loss=1.0, tar_cl_loss=1.0, 
