@@ -387,14 +387,14 @@ def generate_rotated_image(image, lower_angle=-90, upper_angle=90):
     return rotated, percent
 
 
-def generate_rotated_images(images):
+def generate_rotated_images(images, lower_angle=-90, upper_angle=90):
     """Generate rotated images from 4D array, returning rotated images and 2D angle labels"""
     new_images = np.empty_like(images)
     labels = np.empty(images.shape[0])
     for i in range(images.shape[0]):
 #        if i % 2500 == 0:
 #            print("Generating image", i)
-        img, angle = generate_rotated_image(images[i])
+        img, angle = generate_rotated_image(images[i], lower_angle, upper_angle)
         new_images[i] = img
         labels[i] = angle
     return new_images, labels[..., np.newaxis]
