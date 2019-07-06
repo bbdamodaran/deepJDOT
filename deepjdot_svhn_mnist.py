@@ -30,16 +30,24 @@ from da_dataload import svhnn_to_mnist
 data_name = 'svhnn_mnist'
 
 #%%
-from keras.utils.np_utils import to_categorical
-source_trainlabel_cat = to_categorical(source_trainlabel)
-source_testlabel_cat = to_categorical(source_testlabel)
-#test_label_cat = to_categorical(y_test)
-#
-target_trainlabel_cat = to_categorical(target_trainlabel)
-target_testlabel_cat = to_categorical(target_testlabel)
-#target_label_cat = to_categorical(target_label)
+do_reg = True
+
+if do_reg:
+    source_trainlabel_cat = source_trainlabel / 10
+    source_testlabel_cat = source_testlabel / 10
+    target_trainlabel_cat = (target_trainlabel / 10)[..., None]
+    target_testlabel_cat = (target_testlabel / 10)[..., None]
+else:
+    from keras.utils.np_utils import to_categorical
+    source_trainlabel_cat = to_categorical(source_trainlabel)
+    source_testlabel_cat = to_categorical(source_testlabel)
+    #test_label_cat = to_categorical(y_test)
+    #
+    target_trainlabel_cat = to_categorical(target_trainlabel)
+    target_testlabel_cat = to_categorical(target_testlabel)
+    #target_label_cat = to_categorical(target_label)
 #%%
-n_class = len(np.unique(source_trainlabel))
+n_class = source_trainlabel_cat.shape[-1]
 n_dim = np.shape(source_traindata)
 
 #%%
@@ -103,11 +111,18 @@ def tsne_plot(xs, xt, xs_label, xt_label, subset=True, title=None, pname=None):
 from architectures import assda_feat_ext, classifier, regressor, res_net50_fe 
 ms = dnn.Input(shape=(n_dim[1],n_dim[2],n_dim[3]))
 fes = assda_feat_ext(ms, small_model=True)
-nets = classifier(fes, n_class)
+output_layer = regressor if do_reg else classifier
+nets = output_layer(fes, n_class)
 source_model = dnn.Model(ms, nets)
 #%%
 optim = dnn.keras.optimizers.Adam(lr=0.0002)#,beta_1=0.999, beta_2=0.999)
-source_model.compile(optimizer=optim, loss='categorical_crossentropy', metrics=['accuracy', 'mae'])
+if do_reg:
+    metrics = ['mae']
+    loss = 'binary_crossentropy'
+else:
+    metrics = ['acc', 'mae']
+    loss = 'categorical_crossentropy'
+source_model.compile(optimizer=optim, loss=loss, metrics=metrics)
 checkpoint = dnn.keras.callbacks.ModelCheckpoint('bst.hdf5', monitor = 'val_loss', verbose = 0, save_best_only = True, mode = 'auto')
 early_stop = dnn.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=1e-5, 
                                                        patience=5, verbose=0, mode='auto')
@@ -124,10 +139,11 @@ smodel_train_acc = source_model.evaluate(source_traindata, source_trainlabel_cat
 smodel_test_acc = source_model.evaluate(source_testdata, source_testlabel_cat)
 smodel_target_trainacc = source_model.evaluate(target_traindata, target_trainlabel_cat)
 smodel_target_testacc = source_model.evaluate(target_testdata, target_testlabel_cat)
-print("source train acc using source model", smodel_train_acc)
-print("target train acc using source model", smodel_target_trainacc)
-print("source test acc using source model", smodel_test_acc)
-print("target test acc using source model", smodel_target_testacc)
+print(source_model.metrics_names)
+print("source train eval using source model", smodel_train_acc)
+print("target train eval using source model", smodel_target_trainacc)
+print("source test eval using source model", smodel_test_acc)
+print("target test eval using source model", smodel_target_testacc)
 
 
 #%%
@@ -136,12 +152,13 @@ if filesave:
 # source_model = dnn.keras.models.load_model(os.path.join(pathname, 'mnist_usps_Sourcemodel.h5'))
 
 #%%
-sd = feature_extraction(source_model, source_testdata[:5000,:], out_layer_num=-2)
-td = feature_extraction(source_model, target_testdata[:5000,:], out_layer_num=-2)
-# td = feature_extraction(source_model, target_testdata, out_layer_num=-2)
-title = data_name+'_smodel'
-tsne_plot(sd, td, source_testlabel_cat, target_testlabel_cat, title=title, pname=pathname)
-#%% 
+if not do_reg:
+    sd = feature_extraction(source_model, source_testdata[:5000,:], out_layer_num=-2)
+    td = feature_extraction(source_model, target_testdata[:5000,:], out_layer_num=-2)
+    # td = feature_extraction(source_model, target_testdata, out_layer_num=-2)
+    title = data_name+'_smodel'
+    tsne_plot(sd, td, source_testlabel_cat, target_testlabel_cat, title=title, pname=pathname)
+#%% Creating components of target model
 
 main_input = dnn.Input(shape=(n_dim[1],n_dim[2],n_dim[3]))
 fe = assda_feat_ext(main_input, small_model=True)
@@ -149,7 +166,7 @@ fe_size=fe.get_shape().as_list()[1]
 fe_model = dnn.Model(main_input, fe, name= 'fe_model')
 #
 cl_input = dnn.Input(shape=(fe.get_shape().as_list()[1],))
-net = classifier(cl_input , n_class,l2_weight=0.0)
+net = output_layer(cl_input , n_class,l2_weight=0.0)
 cl_model = dnn.Model(cl_input, net, name ='classifier')
 #fe_size = 768
 #%% aljdot model
@@ -200,7 +217,10 @@ class jdot_align(object):
             # target prediction
             ypred_t = y_pred[self.batch_size:2*self.batch_size,:]
             source_ypred = y_pred[:self.batch_size,:]
-            source_loss = dnn.K.mean(dnn.K.categorical_crossentropy(ys, source_ypred))
+            if do_reg:
+                source_loss = dnn.K.mean(dnn.K.binary_crossentropy(ys, source_ypred))
+            else:
+                source_loss = dnn.K.mean(dnn.K.categorical_crossentropy(ys, source_ypred))
             # categorical cross entropy loss
             ypred_t = dnn.K.log(ypred_t)
             # loss calculation based on double sum (sum_ij (ys^i, ypred_t^j))
@@ -256,6 +276,9 @@ class jdot_align(object):
         '''
         ys_label - source data true labels
         '''
+        if do_reg:
+            print("Regression mode, cal_bal will be set to False")
+            cal_bal = False
         ns = source_traindata.shape[0]
         nt= target_traindata.shape[0]
         method=self.ot_method # for optimal transport
@@ -353,14 +376,19 @@ class jdot_align(object):
             t_loss.append(hist[0])
             if self.verbose:
                 if i%50==0:
-                   print ('iter = {:}')
+                   print ('iter =', i)
                    print(list(zip(self.model.metrics_names, hist)))
-                   acc, mae = self.evaluate(target_testdata, target_testlabel_cat)
+                   evaluation = self.evaluate(target_testdata, target_testlabel_cat)
 #                   tpred = self.model.predict(target_testdata)[0]
-                   t_acc.append(acc)
-                   print('Target acc:', t_acc[-1])
-                   print('Target mae:', mae)
-#                   print('Target mae:', mae)
+                   if do_reg:
+                       mae = evaluation
+                       print('Target mae:', mae)
+                       t_acc.append(mae)
+                   else:
+                       acc, mae = evaluation
+                       t_acc.append(acc)
+                       print('Target acc:', t_acc[-1])
+                       print('Target mae:', mae)
         return hist, t_loss, t_acc
             
         
@@ -371,9 +399,10 @@ class jdot_align(object):
 
     def evaluate(self, data, label):
         ypred = self.model.predict(data)[0]
-        acc = accuracy_score(label.argmax(1), ypred.argmax(1))
+        if not do_reg:
+            acc = accuracy_score(label.argmax(1), ypred.argmax(1))
         mae = mean_absolute_error(label, ypred)
-        return acc, mae
+        return mae if do_reg else (acc, mae)
     
     
 #%%
@@ -385,16 +414,17 @@ sloss = 1.0; tloss=0.0001; int_lr=0.001; jdot_alpha=0.001
 al_model = jdot_align(model, batch_size, n_class, optim,allign_loss=1.0,
                       sloss=sloss,tloss=tloss,int_lr=int_lr,jdot_alpha=jdot_alpha,lr_decay=True)
 h,t_loss,tacc = al_model.fit(source_traindata, source_trainlabel_cat, target_traindata,
-                            n_iter=1000,cal_bal=False)
+                            n_iter=1000,cal_bal=True)
 #%%
+print(metrics)
 tmodel_source_train_acc = al_model.evaluate(source_traindata, source_trainlabel_cat)
-print("source train acc using source+target model", tmodel_source_train_acc)
+print("source train eval using source+target model", tmodel_source_train_acc)
 tmodel_tar_train_acc = al_model.evaluate(target_traindata, target_trainlabel_cat)
-print("target train acc using source+target model", tmodel_tar_train_acc)
+print("target train eval using source+target model", tmodel_tar_train_acc)
 tmodel_source_test_acc = al_model.evaluate(source_testdata, source_testlabel_cat)
-print("source test acc using source+target model", tmodel_source_test_acc)
+print("source test eval using source+target model", tmodel_source_test_acc)
 tmodel_tar_test_acc = al_model.evaluate(target_testdata, target_testlabel_cat)
-print("target test acc using source+target model", tmodel_tar_test_acc)
+print("target test eval using source+target model", tmodel_tar_test_acc)
 
 #print("target domain acc", tmodel_tar_test_acc)
 #print("trained on target, source acc", tmodel_source_test_acc)
@@ -411,30 +441,29 @@ if filesave:
     #          jdot_alpha=0.001, lr_decay=True)
     #
     # #%% save results in txt file
-    fn = os.path.join(pathname, data_name+'_deepjdot_acc.txt')
+    fn = os.path.join(pathname, data_name+'_deepjdot_eval.txt')
     fb = open(fn,'w')
     fb.write(" data name = %s DeepJDOT\n" %(data_name))
     fb.write("DeepJDOT param, sloss =%f, tloss=%f,jdot_alpha=%f, int_lr=%f\n" %(sloss, tloss, jdot_alpha, int_lr))
     fb.write("=============================\n")
-    fb.write("Trained in source domain, source data train acc =%f\n" %(smodel_train_acc))
-    fb.write("Trained in source domain, source data test acc=%f\n" %(smodel_test_acc))
-    fb.write("Trained in source domain, target data train acc=%f\n" %(smodel_target_trainacc))
-    fb.write("Trained in source domain, target data test acc=%f\n" %(smodel_target_testacc))
+    fb.write("Trained in source domain, source data train eval =%f\n" %(smodel_train_acc))
+    fb.write("Trained in source domain, source data test eval=%f\n" %(smodel_test_acc))
+    fb.write("Trained in source domain, target data train eval=%f\n" %(smodel_target_trainacc))
+    fb.write("Trained in source domain, target data test eval=%f\n" %(smodel_target_testacc))
     fb.write("=======DeepJDOT Results====================\n")
-    fb.write("Trained with DeepJDOT model, source data train acc=%f\n" %(tmodel_source_train_acc))
-    fb.write("Trained with DeepJDOT model, source data test acc=%f\n" %(tmodel_source_test_acc))
-    fb.write("Trained with DeepJDOT model, target data train acc=%f\n" %(tmodel_tar_train_acc))
-    fb.write("Trained with DeepJDOT model, target data test acc=%f\n" %(tmodel_tar_test_acc))
+    fb.write("Trained with DeepJDOT model, source data train eval=%f\n" %(tmodel_source_train_acc))
+    fb.write("Trained with DeepJDOT model, source data test eval=%f\n" %(tmodel_source_test_acc))
+    fb.write("Trained with DeepJDOT model, target data train eval=%f\n" %(tmodel_tar_train_acc))
+    fb.write("Trained with DeepJDOT model, target data test eval=%f\n" %(tmodel_tar_test_acc))
     # fb.write("Target domain DeepJDOT model, target data max acc = %f\n" %(np.max(tacc)))
     fb.close()
 
 #    np.savez(os.path.join(pathname, data_name+'deepjdot_objvalues.npz'), hist_loss = h, total_loss=t_loss, target_acc=tacc)
 #%%
-al_sourcedata = model.predict(source_traindata[:2000,:])[1]
-al_targetdata = model.predict(target_traindata[:2000,:])[1]
-
-#%%
-
-title = data_name+'_DeepJDOT'
-tsne_plot(al_sourcedata, al_targetdata, source_trainlabel_cat, target_trainlabel_cat,
-          title=title, pname=os.path.join(pathname))
+if not do_reg:
+    al_sourcedata = model.predict(source_traindata[:2000,:])[1]
+    al_targetdata = model.predict(target_traindata[:2000,:])[1]
+    
+    title = data_name+'_DeepJDOT'
+    tsne_plot(al_sourcedata, al_targetdata, source_trainlabel_cat, target_trainlabel_cat,
+              title=title, pname=os.path.join(pathname))
