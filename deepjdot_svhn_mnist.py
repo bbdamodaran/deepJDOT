@@ -143,7 +143,7 @@ output_layer = regressor if do_reg else classifier
 nets = output_layer(fes, n_class)
 source_model = dnn.Model(ms, nets)
 #%%
-optim = dnn.keras.optimizers.Adam(lr=0.001)#,beta_1=0.999, beta_2=0.999)
+optim = dnn.keras.optimizers.Adam(lr=0.0002)#,beta_1=0.999, beta_2=0.999)
 if do_reg:
     metrics = ['mae']
     loss = 'binary_crossentropy'
