@@ -18,8 +18,8 @@ import importlib
 from scipy.spatial.distance import cdist 
 from sklearn.metrics import accuracy_score, mean_absolute_error
 import matplotlib as mpl
-#mpl.use('Agg')
-#plt.switch_backend('agg')
+mpl.use('Agg')
+plt.switch_backend('agg')
 #from sklearn import datasets
 
 from matplotlib.colors import ListedColormap
@@ -30,13 +30,12 @@ from da_dataload import svhnn_to_mnist, generate_rotated_image, generate_rotated
 (target_traindata, target_trainlabel,target_testdata, target_testlabel)=svhnn_to_mnist('min_max', lowerbound_zero=True)
 data_name = 'svhnn_mnist'
 #%%
-#if do_reg and rotate_image:
-#    img, angle_per = generate_rotated_image(source_traindata[0])
-#    plt.imshow(img)
-#    print("Angle percentage:", angle_per)
-#    plt.show()
+#img, angle_per = generate_rotated_image(source_traindata[0])
+#plt.imshow(img)
+#print("Angle percentage:", angle_per)
+#plt.show()
 #%%
-do_reg = True
+do_reg = False
 if do_reg:
     print("Do regression")
     rotate_image = True
@@ -141,7 +140,7 @@ def tsne_plot(xs, xt, xs_label, xt_label, subset=True, title=None, pname=None):
 
 #%% source model
 from architectures import assda_feat_ext, classifier, regressor, res_net50_fe 
-small_model = True
+small_model = False
 ms = dnn.Input(shape=(n_dim[1],n_dim[2],n_dim[3]))
 fes = assda_feat_ext(ms, small_model=small_model)
 output_layer = regressor if do_reg else classifier
@@ -161,9 +160,9 @@ early_stop = dnn.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=1e-
                                                        patience=5, verbose=0, mode='auto')
 callbacks_list = [early_stop, checkpoint]
 #%%
-source_model.fit(source_traindata, source_trainlabel_cat, batch_size=128, epochs=100,
+source_model.fit(source_traindata, source_trainlabel_cat, batch_size=128, epochs=10,
                   validation_split=0.16, callbacks=callbacks_list)
-
+#%%
 # pp='/home/damodara/OT/DA/ALJDOT/codes/results/adaa_source/mnist_usps'
 # source_model = dnn.keras.models.load_model(os.path.join(pp, 'mnist_usps_sourcemodel.h5'))
 
@@ -172,11 +171,11 @@ smodel_train_acc = source_model.evaluate(source_traindata, source_trainlabel_cat
 smodel_test_acc = source_model.evaluate(source_testdata, source_testlabel_cat)
 smodel_target_trainacc = source_model.evaluate(target_traindata, target_trainlabel_cat)
 smodel_target_testacc = source_model.evaluate(target_testdata, target_testlabel_cat)
-print(source_model.metrics_names)
-print("source train eval using source model", smodel_train_acc)
-print("target train eval using source model", smodel_target_trainacc)
-print("source test eval using source model", smodel_test_acc)
-print("target test eval using source model", smodel_target_testacc)
+print('metrics names', source_model.metrics_names)
+print("source train metrics using source model", smodel_train_acc)
+print("target train metrics using source model", smodel_target_trainacc)
+print("source test metrics using source model", smodel_test_acc)
+print("target test metrics using source model", smodel_target_testacc)
 
 
 #%%
@@ -446,17 +445,17 @@ sloss = 1.0; tloss=0.0001; int_lr=0.001; jdot_alpha=0.001
 al_model = jdot_align(model, batch_size, n_class, optim,allign_loss=1.0,
                       sloss=sloss,tloss=tloss,int_lr=int_lr,jdot_alpha=jdot_alpha,lr_decay=True)
 h,t_loss,tacc = al_model.fit(source_traindata, source_trainlabel_cat, target_traindata,
-                            n_iter=1000,cal_bal=True)
+                            n_iter=15000,cal_bal=True)
 #%%
-print(metrics)
+print('metrics names', metrics)
 tmodel_source_train_acc = al_model.evaluate(source_traindata, source_trainlabel_cat)
-print("source train eval using source+target model", tmodel_source_train_acc)
+print("source train metrics using source+target model", tmodel_source_train_acc)
 tmodel_tar_train_acc = al_model.evaluate(target_traindata, target_trainlabel_cat)
-print("target train eval using source+target model", tmodel_tar_train_acc)
+print("target train metrics using source+target model", tmodel_tar_train_acc)
 tmodel_source_test_acc = al_model.evaluate(source_testdata, source_testlabel_cat)
-print("source test eval using source+target model", tmodel_source_test_acc)
+print("source test metrics using source+target model", tmodel_source_test_acc)
 tmodel_tar_test_acc = al_model.evaluate(target_testdata, target_testlabel_cat)
-print("target test eval using source+target model", tmodel_tar_test_acc)
+print("target test metrics using source+target model", tmodel_tar_test_acc)
 
 #print("target domain acc", tmodel_tar_test_acc)
 #print("trained on target, source acc", tmodel_source_test_acc)
@@ -478,15 +477,17 @@ if filesave:
     fb.write(" data name = %s DeepJDOT\n" %(data_name))
     fb.write("DeepJDOT param, sloss =%f, tloss=%f,jdot_alpha=%f, int_lr=%f\n" %(sloss, tloss, jdot_alpha, int_lr))
     fb.write("=============================\n")
-    fb.write("Trained in source domain, source data train eval =%s\n" %(smodel_train_acc))
-    fb.write("Trained in source domain, source data test eval=%s\n" %(smodel_test_acc))
-    fb.write("Trained in source domain, target data train eval=%s\n" %(smodel_target_trainacc))
-    fb.write("Trained in source domain, target data test eval=%s\n" %(smodel_target_testacc))
+    fb.write("Metrics names=%s\n" %(source_model.metrics_names))
+    fb.write("Trained in source domain, source data train metrics=%s\n" %(smodel_train_acc))
+    fb.write("Trained in source domain, source data test metrics=%s\n" %(smodel_test_acc))
+    fb.write("Trained in source domain, target data train metrics=%s\n" %(smodel_target_trainacc))
+    fb.write("Trained in source domain, target data test metrics=%s\n" %(smodel_target_testacc))
     fb.write("=======DeepJDOT Results====================\n")
-    fb.write("Trained with DeepJDOT model, source data train eval=%s\n" %(tmodel_source_train_acc))
-    fb.write("Trained with DeepJDOT model, source data test eval=%s\n" %(tmodel_source_test_acc))
-    fb.write("Trained with DeepJDOT model, target data train eval=%s\n" %(tmodel_tar_train_acc))
-    fb.write("Trained with DeepJDOT model, target data test eval=%s\n" %(tmodel_tar_test_acc))
+    fb.write("Metrics names=%s\n" %(metrics))
+    fb.write("Trained with DeepJDOT model, source data train metrics=%s\n" %str(tmodel_source_train_acc))
+    fb.write("Trained with DeepJDOT model, source data test metrics=%s\n" %str(tmodel_source_test_acc))
+    fb.write("Trained with DeepJDOT model, target data train metrics=%s\n" %str(tmodel_tar_train_acc))
+    fb.write("Trained with DeepJDOT model, target data test metrics=%s\n" %str(tmodel_tar_test_acc))
     # fb.write("Target domain DeepJDOT model, target data max acc = %f\n" %(np.max(tacc)))
     fb.close()
 

@@ -13,11 +13,11 @@ In order to run, the code requires the following Python modules:
 * dnn      - import necessary functions from keras
 * deepjdot_demo  - DeepJDOT on the sample dataset
 
-To run the DeepJDOT on the sample dataset, Please see or run the "deepjdot_demo.py"
+To run the DeepJDOT on the sample 2D dataset, please see or run the "deepjdot_demo.py".
 
-To run on the real data set: SVHN --> MNIST, please see "deepjdot_svhn_mnist.py"
+To run on the real data set: SVHN --> MNIST, please see "deepjdot_svhn_mnist.py".
+The default task is to do classification but you can turn on regression demo by setting `do_reg` to `True`.
+If you do not want to wait long training time you can set `small_model` to `True`.
 
-
-
-
-
+I suggest you running the demo files inside `Spyder` or any interactive python IDE so that you can investigate
+each cell denoted by `#%%` lines and understand the code better.

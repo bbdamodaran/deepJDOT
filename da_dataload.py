@@ -6,7 +6,6 @@ Created on Mon Sep 25 17:30:35 2017
 """
 import DatasetLoad
 import numpy as np
-import imutils
 
 def mnist_to_usps():
     from keras.datasets import mnist
@@ -379,6 +378,7 @@ def cifar_to_stl(resize_mode='i',normalize=True):
 
 def generate_rotated_image(image, lower_angle=-90, upper_angle=90):
     """Generate a rotated image with a random rotation angle"""
+    import imutils
     percent = np.random.random()
     percent_to_angle = lambda x: x * (upper_angle-lower_angle) + lower_angle
     #percent_to_scale = lambda x: x * 0.5 + 0.5
