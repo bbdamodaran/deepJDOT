@@ -464,7 +464,7 @@ if filesave:
     #          jdot_alpha=0.001, lr_decay=True)
     #
     # #%% save results in txt file
-    fn = os.path.join(pathname, data_name+'_deepjdot_eval.txt')
+    fn = os.path.join(pathname, data_name+'_deepjdot_metrics.txt')
     fb = open(fn,'w')
     fb.write(" data name = %s DeepJDOT\n" %(data_name))
     fb.write("Task = %s\n" % ("Regression" if do_reg else "Classification"))
