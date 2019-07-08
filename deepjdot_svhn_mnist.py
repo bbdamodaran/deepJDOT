@@ -62,11 +62,6 @@ if do_reg:
         source_testlabel_cat = source_testlabel / 10
         target_trainlabel_cat = (target_trainlabel / 10)[..., None]
         target_testlabel_cat = (target_testlabel / 10)[..., None]
-#        from keras.utils.np_utils import to_categorical
-#        source_trainlabel_cat = to_categorical(source_trainlabel)
-#        source_testlabel_cat = to_categorical(source_testlabel)
-#        target_trainlabel_cat = to_categorical(target_trainlabel)
-#        target_testlabel_cat = to_categorical(target_testlabel)
 else:
     print("Do classification")
     from keras.utils.np_utils import to_categorical
@@ -457,10 +452,6 @@ tmodel_source_test_acc = al_model.evaluate(source_testdata, source_testlabel_cat
 print("source test metrics using source+target model", tmodel_source_test_acc)
 tmodel_tar_test_acc = al_model.evaluate(target_testdata, target_testlabel_cat)
 print("target test metrics using source+target model", tmodel_tar_test_acc)
-
-#print("target domain acc", tmodel_tar_test_acc)
-#print("trained on target, source acc", tmodel_source_test_acc)
-#print("maximum target domain acc", np.max(tacc))
 
 allweights = model.get_weights()
 #%% deepjdot model save
