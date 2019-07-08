@@ -310,7 +310,7 @@ class jdot_align(object):
         nt= target_traindata.shape[0]
         method=self.ot_method # for optimal transport
         alpha=self.jdot_alpha
-        t_acc = []
+        t_metrics = []
         t_loss =[]
         tloss = dnn.K.eval(self.tloss)
         g_metric ='deep'
@@ -409,14 +409,14 @@ class jdot_align(object):
 #                   tpred = self.model.predict(target_testdata)[0]
                    if do_reg:
                        mae = evaluation
+                       t_metrics.append(mae)
                        print('Target mae:', mae)
-                       t_acc.append(mae)
                    else:
                        acc, mae = evaluation
-                       t_acc.append(acc)
-                       print('Target acc:', t_acc[-1])
+                       t_metrics.append([acc, mae])
+                       print('Target acc:', acc)
                        print('Target mae:', mae)
-        return hist, t_loss, t_acc
+        return hist, t_loss, t_metrics
             
         
 
@@ -440,7 +440,7 @@ sample_size=50
 sloss = 1.0; tloss=0.0001; int_lr=0.001; jdot_alpha=0.001
 al_model = jdot_align(model, batch_size, n_class, optim,allign_loss=1.0,
                       sloss=sloss,tloss=tloss,int_lr=int_lr,jdot_alpha=jdot_alpha,lr_decay=True)
-h,t_loss,tacc = al_model.fit(source_traindata, source_trainlabel_cat, target_traindata,
+h,t_loss,t_metrics = al_model.fit(source_traindata, source_trainlabel_cat, target_traindata,
                             n_iter=15000,cal_bal=True)
 #%%
 print('metrics names:', metrics)
