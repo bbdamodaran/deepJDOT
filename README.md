@@ -13,6 +13,7 @@ In order to run, the code requires the following Python modules:
 * [POT](https://github.com/rflamary/POT) (Python Optimal Transport library)
 * keras with tensorflow backend (preferably GPU version)
 * imutils (only for rotating images in regression demo)
+* scikit-learn (for scoring functions)
 
 ## Modules
 
