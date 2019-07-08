@@ -141,6 +141,7 @@ def tsne_plot(xs, xt, xs_label, xt_label, subset=True, title=None, pname=None):
 #%% source model
 from architectures import assda_feat_ext, classifier, regressor, res_net50_fe 
 small_model = False
+
 ms = dnn.Input(shape=(n_dim[1],n_dim[2],n_dim[3]))
 fes = assda_feat_ext(ms, small_model=small_model)
 output_layer = regressor if do_reg else classifier
@@ -171,7 +172,7 @@ smodel_train_acc = source_model.evaluate(source_traindata, source_trainlabel_cat
 smodel_test_acc = source_model.evaluate(source_testdata, source_testlabel_cat)
 smodel_target_trainacc = source_model.evaluate(target_traindata, target_trainlabel_cat)
 smodel_target_testacc = source_model.evaluate(target_testdata, target_testlabel_cat)
-print('metrics names', source_model.metrics_names)
+print('metrics names:', source_model.metrics_names)
 print("source train metrics using source model", smodel_train_acc)
 print("target train metrics using source model", smodel_target_trainacc)
 print("source test metrics using source model", smodel_test_acc)
@@ -429,7 +430,7 @@ class jdot_align(object):
         return ypred
 
     def evaluate(self, data, label):
-        ypred = self.model.predict(data)[0]
+        ypred = self.model.predict(data, verbose=1)[0]
         if not do_reg:
             acc = accuracy_score(label.argmax(1), ypred.argmax(1))
         mae = mean_absolute_error(label, ypred)
@@ -447,7 +448,7 @@ al_model = jdot_align(model, batch_size, n_class, optim,allign_loss=1.0,
 h,t_loss,tacc = al_model.fit(source_traindata, source_trainlabel_cat, target_traindata,
                             n_iter=15000,cal_bal=True)
 #%%
-print('metrics names', metrics)
+print('metrics names:', metrics)
 tmodel_source_train_acc = al_model.evaluate(source_traindata, source_trainlabel_cat)
 print("source train metrics using source+target model", tmodel_source_train_acc)
 tmodel_tar_train_acc = al_model.evaluate(target_traindata, target_trainlabel_cat)
@@ -475,6 +476,7 @@ if filesave:
     fn = os.path.join(pathname, data_name+'_deepjdot_eval.txt')
     fb = open(fn,'w')
     fb.write(" data name = %s DeepJDOT\n" %(data_name))
+    fb.write("Task = %s\n" % ("Regression" if do_reg else "Classification"))
     fb.write("DeepJDOT param, sloss =%f, tloss=%f,jdot_alpha=%f, int_lr=%f\n" %(sloss, tloss, jdot_alpha, int_lr))
     fb.write("=============================\n")
     fb.write("Metrics names=%s\n" %(source_model.metrics_names))
