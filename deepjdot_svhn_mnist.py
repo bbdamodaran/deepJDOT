@@ -484,7 +484,7 @@ if filesave:
     # fb.write("Target domain DeepJDOT model, target data max acc = %f\n" %(np.max(tacc)))
     fb.close()
 
-#    np.savez(os.path.join(pathname, data_name+'deepjdot_objvalues.npz'), hist_loss = h, total_loss=t_loss, target_acc=tacc)
+    np.savez(os.path.join(pathname, data_name+'deepjdot_objvalues.npz'), hist_loss = h, total_loss=t_loss, target_metrics=t_metrics)
 #%%
 if not do_reg:
     al_sourcedata = model.predict(source_traindata[:2000,:])[1]
