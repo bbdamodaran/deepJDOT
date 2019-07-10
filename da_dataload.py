@@ -185,7 +185,7 @@ def mnistm_to_mnist():
 
 
 #%% SVHNN MNIST
-def svhnn_to_mnist(method = 'zero_mean_unitvarince'):
+def svhnn_to_mnist(method = 'zero_mean_unitvarince', **params):
     from skimage.color import rgb2gray
     from scipy.misc import imresize
     from DatasetLoad import SVHN_dataload
@@ -197,8 +197,8 @@ def svhnn_to_mnist(method = 'zero_mean_unitvarince'):
         source_traindata = instance_zero_mean_unitvar(source_traindata, scaling=True)
         source_testdata = instance_zero_mean_unitvar(source_testdata, scaling=True)
     elif method =='min_max':
-        source_traindata = min_max_scaling(source_traindata)
-        source_testdata = min_max_scaling(source_testdata)
+        source_traindata = min_max_scaling(source_traindata, **params)
+        source_testdata = min_max_scaling(source_testdata, **params)
     else:
         source_traindata = zero_mean_unitvarince(source_traindata, scaling=True)
         source_testdata = zero_mean_unitvarince(source_testdata, scaling=True)
@@ -224,8 +224,8 @@ def svhnn_to_mnist(method = 'zero_mean_unitvarince'):
         target_traindata = instance_zero_mean_unitvar(target_traindata, scaling=True)
         target_testdata = instance_zero_mean_unitvar(target_testdata, scaling=True)
     elif method =='min_max':
-        target_traindata = min_max_scaling(target_traindata)
-        target_testdata = min_max_scaling(target_testdata)
+        target_traindata = min_max_scaling(target_traindata, **params)
+        target_testdata = min_max_scaling(target_testdata, **params)
     else:
         target_traindata = zero_mean_unitvarince(target_traindata,scaling=True)
         target_testdata = zero_mean_unitvarince(target_testdata,scaling=True)
@@ -376,7 +376,28 @@ def cifar_to_stl(resize_mode='i',normalize=True):
 
 
 
+def generate_rotated_image(image, lower_angle=-90, upper_angle=90):
+    """Generate a rotated image with a random rotation angle"""
+    import imutils
+    percent = np.random.random()
+    percent_to_angle = lambda x: x * (upper_angle-lower_angle) + lower_angle
+    #percent_to_scale = lambda x: x * 0.5 + 0.5
+    angle = percent_to_angle(percent)
+    rotated = imutils.rotate(image, angle, scale=1)
+    return rotated, percent
 
+
+def generate_rotated_images(images, lower_angle=-90, upper_angle=90):
+    """Generate rotated images from 4D array, returning rotated images and 2D angle labels"""
+    new_images = np.empty_like(images)
+    labels = np.empty(images.shape[0])
+    for i in range(images.shape[0]):
+#        if i % 2500 == 0:
+#            print("Generating image", i)
+        img, angle = generate_rotated_image(images[i], lower_angle, upper_angle)
+        new_images[i] = img
+        labels[i] = angle
+    return new_images, labels[..., np.newaxis]
 
 
     

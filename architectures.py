@@ -49,24 +49,26 @@ def mnist_feat_ext(main_input, l2_weight=0.0):
 
 
     
-def assda_feat_ext(main_input, l2_weight=0.0):
-    net = dnn.Convolution2D(32, (3, 3),padding='same', activation='relu',
+def assda_feat_ext(main_input, l2_weight=0.0, small_model=False):
+    padding = 'same'
+    maxpool_strides = 2 if small_model else 1
+    net = dnn.Convolution2D(32, (3, 3),padding=padding, activation='relu',
                                 kernel_regularizer=dnn.keras.regularizers.l2(l2_weight))(main_input)
-    net = dnn.Convolution2D(32, (3, 3), padding='same', activation='relu',
+    net = dnn.Convolution2D(32, (3, 3), padding=padding, activation='relu',
                                 kernel_regularizer=dnn.keras.regularizers.l2(l2_weight))(net)
-    net = dnn.MaxPooling2D(pool_size=(2, 2), strides=1)(net)
+    net = dnn.MaxPooling2D(pool_size=(2, 2), strides=maxpool_strides)(net)
     # net = dnn.Dropout(0.5)(net)
-    net = dnn.Convolution2D(64, (3, 3), padding='same', activation='relu',
+    net = dnn.Convolution2D(64, (3, 3), padding=padding, activation='relu',
                                 kernel_regularizer=dnn.keras.regularizers.l2(l2_weight))(net)
-    net = dnn.Convolution2D(64, (3, 3), padding='same', activation='relu',
+    net = dnn.Convolution2D(64, (3, 3), padding=padding, activation='relu',
                                 kernel_regularizer=dnn.keras.regularizers.l2(l2_weight))(net)
-    net = dnn.MaxPooling2D(pool_size=(2, 2), strides=1)(net)
+    net = dnn.MaxPooling2D(pool_size=(2, 2), strides=maxpool_strides)(net)
     # net = dnn.Dropout(0.5)(net)
-    net = dnn.Convolution2D(128, (3, 3), padding='same', activation='relu',
+    net = dnn.Convolution2D(128, (3, 3), padding=padding, activation='relu',
                                 kernel_regularizer=dnn.keras.regularizers.l2(l2_weight))(net)
-    net = dnn.Convolution2D(128, (3, 3), padding='same', activation='relu',
+    net = dnn.Convolution2D(128, (3, 3), padding=padding, activation='relu',
                                 kernel_regularizer=dnn.keras.regularizers.l2(l2_weight))(net)
-    net = dnn.MaxPooling2D(pool_size=(2, 2), strides=1)(net)
+    net = dnn.MaxPooling2D(pool_size=(2, 2), strides=maxpool_strides)(net)
 #   
     net = dnn.Flatten()(net)
     net = dnn.Dense(128,activation='sigmoid',
@@ -75,7 +77,9 @@ def assda_feat_ext(main_input, l2_weight=0.0):
     
 
     
-    
+def regressor(model_input, noutputs, l2_weight=0.0):
+    net = dnn.Dense(noutputs, activation='sigmoid', name='regressor_output')(model_input)
+    return net
 
 
 def classifier(model_input, nclass,l2_weight=0.0):
