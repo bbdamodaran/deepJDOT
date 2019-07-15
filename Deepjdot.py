@@ -148,7 +148,7 @@ class Deepjdot(object):
         
         for i in range(n_iter):
             
-            if self.lr_decay and i%5000 ==0:
+            if self.lr_decay and i > 0 and i%5000 ==0:
                 # p = float(i) / n_iter
                 # lr = self.int_lr / (1. + 10 * p)**0.9
                 lr = dnn.K.get_value(self.model.optimizer.lr)
