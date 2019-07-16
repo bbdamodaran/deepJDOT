@@ -335,7 +335,7 @@ class jdot_align(object):
         self.model.compile(optimizer= optim, loss =[self.classifier_cat_loss, self.align_loss])
         dnn.K.set_value(self.model.optimizer.lr, self.int_lr)        
         for i in range(n_iter):
-            if self.lr_decay and i%10000 ==0:
+            if self.lr_decay and i > 0 and i%10000 ==0:
                 # p = float(i) / n_iter
                 # lr = self.int_lr / (1. + 10 * p)**0.9
                 lr = dnn.K.get_value(self.model.optimizer.lr)
