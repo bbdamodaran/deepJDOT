@@ -437,7 +437,7 @@ model.set_weights(source_model.get_weights())
 #model.set_weights(allweights)
 batch_size=500
 sample_size=50
-sloss = 1.0; tloss=0.0001; int_lr=0.001; jdot_alpha=0.001
+sloss = 1.0; tloss=0.0001; int_lr=0.0001; jdot_alpha=0.001
 al_model = jdot_align(model, batch_size, n_class, optim,allign_loss=1.0,
                       sloss=sloss,tloss=tloss,int_lr=int_lr,jdot_alpha=jdot_alpha,lr_decay=True)
 h,t_loss,t_metrics = al_model.fit(source_traindata, source_trainlabel_cat, target_traindata,
